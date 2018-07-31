@@ -1,3 +1,5 @@
+package cmd_console;
+
 public class GatewayResponse {
 	// Our message types.
 

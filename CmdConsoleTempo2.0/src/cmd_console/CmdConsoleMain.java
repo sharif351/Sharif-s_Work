@@ -1,3 +1,5 @@
+package cmd_console;
+
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
@@ -27,7 +29,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 
-public class CmdConsoleMain extends JFrame implements DocumentListener {
+public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleCallBackInterface {
 
 	private JTextField entry;
 	private JLabel jLabel1;
@@ -35,7 +37,9 @@ public class CmdConsoleMain extends JFrame implements DocumentListener {
 	private JLabel status;
 	private JTextArea textArea;
 
-	private CpGatewayConnectivity mCpGatewayConnectivity = new CpGatewayConnectivity();
+	final static int TEMPO_ID = 10503;
+
+	private GatewayConsoleConnection mGatewayConsoleConnection = null;
 
 	final static Color HILIT_COLOR = Color.LIGHT_GRAY;
 	final static Color ERROR_COLOR = Color.PINK;
@@ -72,11 +76,95 @@ public class CmdConsoleMain extends JFrame implements DocumentListener {
 		ActionMap MyKeyAction = entry.getActionMap();
 		MyInputKey.put(KeyStroke.getKeyStroke("ENTER"), ENTER_ACTION);
 		MyKeyAction.put(ENTER_ACTION, new EnterAction());
+
+		InitConsoleConn();
+	}
+
+	public void InitConsoleConn() {
+		try {
+			mGatewayConsoleConnection = CpGatewayConnectivity.InitializeConnection(TEMPO_ID, this);
+		} catch (Exception e) {
+			System.out.println("Exception thrown in the parent class");
+		}
+	}
+
+	public void gatewayResponseAvailable(GatewayResponse gatewayResponse) {
+		switch (gatewayResponse.getMessageType()) {
+		case GatewayResponse.GR_TYPE_STREAM_IN_USE:
+			System.out.println("GR_TYPE_STREAM_IN_USE");
+			break;
+
+		case GatewayResponse.GR_TYPE_STREAM_WAITING:
+			System.out.println("GR_TYPE_STREAM_WAITING");
+			break;
+
+		case GatewayResponse.GR_TYPE_STREAM_ESTABLISHED:
+			System.out.println("GR_TYPE_STREAM_ESTABLISHED");
+			break;
+
+		case GatewayResponse.GR_TYPE_STREAM_CLOSING:
+			System.out.println("GR_TYPE_STREAM_CLOSING");
+			break;
+
+		case GatewayResponse.GR_TYPE_CONSOLE_DATA:
+			System.out.println("GR_TYPE_CONSOLE_DATA");
+
+			break;
+
+		default:
+			System.out.println("Response type: " + gatewayResponse.getMessageType());
+			break;
+		}
+	}
+
+	public void networkException(String message, Exception ex) {
+		System.out.println(message + " " + ex.getMessage());
+	}
+
+	public void connectionClosing() {
+		System.out.println("Connection is closed by the Server");
+	}
+
+	// Close our stream connection if it's open. Synchronize this so other threads
+	// don't write
+	// to the stream while we're closing it.
+
+	synchronized public void closeGatewayStream() {
+		if (mGatewayConsoleConnection != null) {
+			// Notify peer of the stream shutdown.
+			mGatewayConsoleConnection.sendGatewayStreamRequest(new GatewayMessage(GatewayMessage.GM_TYPE_STOP_STREAM));
+
+			try {
+				Thread.sleep(500);
+			} catch (Exception ex) {
+				System.out.println("Got exception on closing connection");
+			}
+
+			mGatewayConsoleConnection.close();
+			mGatewayConsoleConnection = null;
+		}
 	}
 
 	/**
 	 * This method is called from within the constructor to initialize the form.
 	 */
+
+	class CancelAction extends AbstractAction {
+		public void actionPerformed(ActionEvent ev) {
+			hilit.removeAllHighlights();
+			entry.setText("");
+			entry.setBackground(entryBg);
+			closeGatewayStream();
+		}
+	}
+
+	class EnterAction extends AbstractAction {
+		public void actionPerformed(ActionEvent ev) {
+			String s = entry.getText();
+			message("Executing Command: < " + s + " >");
+			// textArea.setText(s);
+		}
+	}
 
 	private void initComponents() {
 		entry = new JTextField();
@@ -199,23 +287,6 @@ public class CmdConsoleMain extends JFrame implements DocumentListener {
 	public void changedUpdate(DocumentEvent ev) {
 	}
 
-	class CancelAction extends AbstractAction {
-		public void actionPerformed(ActionEvent ev) {
-			hilit.removeAllHighlights();
-			entry.setText("");
-			entry.setBackground(entryBg);
-		}
-	}
-
-	class EnterAction extends AbstractAction {
-		public void actionPerformed(ActionEvent ev) {
-			String s = entry.getText();
-			message("Executing Command: < " + s + " >");
-			// textArea.setText(s);
-			mCpGatewayConnectivity.PrintMyCommand(s);
-		}
-	}
-
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
@@ -231,5 +302,4 @@ public class CmdConsoleMain extends JFrame implements DocumentListener {
 			}
 		});
 	}
-
 }
