@@ -27,6 +27,7 @@ import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultCaret;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 
@@ -114,23 +115,8 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 
 		case GatewayResponse.GR_TYPE_CONSOLE_DATA:
 			System.out.println("GR_TYPE_CONSOLE_DATA");
-			// // textArea.setText((String) gatewayResponse.getMessagePayload().toString());
-			//
-			// short respLength = DataUtil.byteToShort(gatewayResponse.getMessageHeader(),
-			// 0);
-			//
-			// System.out.println("RespLen: " + respLength + " PayloadLen: " +
-			// gatewayResponse.getMessagePayload().length);
-			// for (int i = 0; i < gatewayResponse.getMessagePayload().length; i++) {
-			// System.out.print(gatewayResponse.getMessagePayload()[i] + " ");
-			// }
-			// System.out.print("\n");
-			// // System.out.print(gatewayResponse.getMessagePayload());
-			// // System.out.println(gatewayResponse.getMessagePayload().toString());
-
 			String ParsedString = new String(gatewayResponse.getMessagePayload(), Charset.forName("UTF-8"));
-			textArea.setText(ParsedString);
-
+			textArea.append(ParsedString + "\n\r");
 			break;
 
 		default:
@@ -165,6 +151,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 
 			mGatewayConsoleConnection.close();
 			mGatewayConsoleConnection = null;
+			ConnEstablished = false;
 		}
 	}
 
@@ -186,7 +173,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 			String s = entry.getText();
 			if (ConnEstablished == true) {
 				message("Executing Command: < " + s + " >");
-				// textArea.setText(s);
+				textArea.setText("Executed Command: <" + s + " >\n\n\r");
 				mGatewayConsoleConnection.sendGatewayStreamRequest(
 						new GatewayMessage(GatewayMessage.GM_TYPE_CONSOLE_DATA, s.getBytes()));
 			} else {
@@ -200,6 +187,9 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 		textArea = new JTextArea();
 		status = new JLabel();
 		jLabel1 = new JLabel();
+
+		DefaultCaret caret = (DefaultCaret) textArea.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setTitle("CarePredict Tempo2.0 Command Console");
@@ -310,6 +300,12 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 	}
 
 	public void removeUpdate(DocumentEvent ev) {
+		InputStream in = getClass().getResourceAsStream("content.txt");
+		try {
+			textArea.read(new InputStreamReader(in), null);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		search();
 	}
 
