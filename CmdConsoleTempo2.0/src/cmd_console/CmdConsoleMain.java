@@ -1,8 +1,11 @@
+package cmd_console;
+
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
@@ -27,7 +30,10 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 
-public class CmdConsoleMain extends JFrame implements DocumentListener {
+public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleCallBackInterface {
+
+	private GatewayConsoleConnection mGatewayConsoleConnection = null;
+	private boolean ConnEstablished = false;
 
 	private JTextField entry;
 	private JLabel jLabel1;
@@ -35,7 +41,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener {
 	private JLabel status;
 	private JTextArea textArea;
 
-	private CpGatewayConnectivity mCpGatewayConnectivity = new CpGatewayConnectivity();
+	final static int TEMPO_ID = 10503;
 
 	final static Color HILIT_COLOR = Color.LIGHT_GRAY;
 	final static Color ERROR_COLOR = Color.PINK;
@@ -72,11 +78,122 @@ public class CmdConsoleMain extends JFrame implements DocumentListener {
 		ActionMap MyKeyAction = entry.getActionMap();
 		MyInputKey.put(KeyStroke.getKeyStroke("ENTER"), ENTER_ACTION);
 		MyKeyAction.put(ENTER_ACTION, new EnterAction());
+
+		InitConsoleConn();
+	}
+
+	public void InitConsoleConn() {
+		try {
+			mGatewayConsoleConnection = CpGatewayConnectivity.InitializeConnection(TEMPO_ID, this);
+		} catch (Exception e) {
+			System.out.println("Exception thrown in the parent class");
+		}
+	}
+
+	public void gatewayResponseAvailable(GatewayResponse gatewayResponse) {
+		switch (gatewayResponse.getMessageType()) {
+		case GatewayResponse.GR_TYPE_STREAM_IN_USE:
+			System.out.println("GR_TYPE_STREAM_IN_USE");
+			message("Stream is alreay in use.");
+			break;
+
+		case GatewayResponse.GR_TYPE_STREAM_WAITING:
+			System.out.println("GR_TYPE_STREAM_WAITING");
+			message("Stream is waiting..");
+			break;
+
+		case GatewayResponse.GR_TYPE_STREAM_ESTABLISHED:
+			System.out.println("GR_TYPE_STREAM_ESTABLISHED");
+			message("Stream established");
+			ConnEstablished = true;
+			break;
+
+		case GatewayResponse.GR_TYPE_STREAM_CLOSING:
+			System.out.println("GR_TYPE_STREAM_CLOSING");
+			break;
+
+		case GatewayResponse.GR_TYPE_CONSOLE_DATA:
+			System.out.println("GR_TYPE_CONSOLE_DATA");
+			// // textArea.setText((String) gatewayResponse.getMessagePayload().toString());
+			//
+			// short respLength = DataUtil.byteToShort(gatewayResponse.getMessageHeader(),
+			// 0);
+			//
+			// System.out.println("RespLen: " + respLength + " PayloadLen: " +
+			// gatewayResponse.getMessagePayload().length);
+			// for (int i = 0; i < gatewayResponse.getMessagePayload().length; i++) {
+			// System.out.print(gatewayResponse.getMessagePayload()[i] + " ");
+			// }
+			// System.out.print("\n");
+			// // System.out.print(gatewayResponse.getMessagePayload());
+			// // System.out.println(gatewayResponse.getMessagePayload().toString());
+
+			String ParsedString = new String(gatewayResponse.getMessagePayload(), Charset.forName("UTF-8"));
+			textArea.setText(ParsedString);
+
+			break;
+
+		default:
+			System.out.println("Response type: " + gatewayResponse.getMessageType());
+			message("Response type: " + gatewayResponse.getMessageType() + "UNKNOWN");
+			break;
+		}
+	}
+
+	public void networkException(String message, Exception ex) {
+		System.out.println(message + " " + ex.getMessage());
+	}
+
+	public void connectionClosing() {
+		System.out.println("Connection is closed by the Server");
+	}
+
+	// Close our stream connection if it's open. Synchronize this so other threads
+	// don't write
+	// to the stream while we're closing it.
+
+	synchronized public void closeGatewayStream() {
+		if (mGatewayConsoleConnection != null) {
+			// Notify peer of the stream shutdown.
+			mGatewayConsoleConnection.sendGatewayStreamRequest(new GatewayMessage(GatewayMessage.GM_TYPE_STOP_STREAM));
+
+			try {
+				Thread.sleep(500);
+			} catch (Exception ex) {
+				System.out.println("Got exception on closing connection");
+			}
+
+			mGatewayConsoleConnection.close();
+			mGatewayConsoleConnection = null;
+		}
 	}
 
 	/**
 	 * This method is called from within the constructor to initialize the form.
 	 */
+
+	class CancelAction extends AbstractAction {
+		public void actionPerformed(ActionEvent ev) {
+			hilit.removeAllHighlights();
+			entry.setText("");
+			entry.setBackground(entryBg);
+			closeGatewayStream();
+		}
+	}
+
+	class EnterAction extends AbstractAction {
+		public void actionPerformed(ActionEvent ev) {
+			String s = entry.getText();
+			if (ConnEstablished == true) {
+				message("Executing Command: < " + s + " >");
+				// textArea.setText(s);
+				mGatewayConsoleConnection.sendGatewayStreamRequest(
+						new GatewayMessage(GatewayMessage.GM_TYPE_CONSOLE_DATA, s.getBytes()));
+			} else {
+				message("Stream is not yet established");
+			}
+		}
+	}
 
 	private void initComponents() {
 		entry = new JTextField();
@@ -161,7 +278,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener {
 
 		String s = entry.getText();
 		if (s.length() <= 0) {
-			message("Nothing to search");
+			// message("Nothing to search");
 			return;
 		}
 
@@ -173,13 +290,13 @@ public class CmdConsoleMain extends JFrame implements DocumentListener {
 				hilit.addHighlight(index, end, painter);
 				textArea.setCaretPosition(end);
 				entry.setBackground(entryBg);
-				message("'" + s + "' found. Press ESC to end search");
+				// message("'" + s + "' found. Press ESC to end search");
 			} catch (BadLocationException e) {
 				e.printStackTrace();
 			}
 		} else {
 			entry.setBackground(ERROR_COLOR);
-			message("'" + s + "' not found. Press ESC to start a new search");
+			// message("'" + s + "' not found. Press ESC to start a new search");
 		}
 	}
 
@@ -199,23 +316,6 @@ public class CmdConsoleMain extends JFrame implements DocumentListener {
 	public void changedUpdate(DocumentEvent ev) {
 	}
 
-	class CancelAction extends AbstractAction {
-		public void actionPerformed(ActionEvent ev) {
-			hilit.removeAllHighlights();
-			entry.setText("");
-			entry.setBackground(entryBg);
-		}
-	}
-
-	class EnterAction extends AbstractAction {
-		public void actionPerformed(ActionEvent ev) {
-			String s = entry.getText();
-			message("Executing Command: < " + s + " >");
-			// textArea.setText(s);
-			mCpGatewayConnectivity.PrintMyCommand(s);
-		}
-	}
-
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
@@ -231,5 +331,4 @@ public class CmdConsoleMain extends JFrame implements DocumentListener {
 			}
 		});
 	}
-
 }

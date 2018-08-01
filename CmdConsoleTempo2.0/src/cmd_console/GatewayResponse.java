@@ -1,3 +1,5 @@
+package cmd_console;
+
 public class GatewayResponse {
 	// Our message types.
 
@@ -75,5 +77,9 @@ public class GatewayResponse {
 
 	public byte[] getMessagePayload() {
 		return m_payloadData;
+	}
+
+	public byte[] getMessageHeader() {
+		return m_headerData;
 	}
 }
