@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
@@ -31,6 +32,9 @@ import javax.swing.text.Highlighter;
 
 public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleCallBackInterface {
 
+	private GatewayConsoleConnection mGatewayConsoleConnection = null;
+	private boolean ConnEstablished = false;
+
 	private JTextField entry;
 	private JLabel jLabel1;
 	private JScrollPane jScrollPane1;
@@ -38,8 +42,6 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 	private JTextArea textArea;
 
 	final static int TEMPO_ID = 10503;
-
-	private GatewayConsoleConnection mGatewayConsoleConnection = null;
 
 	final static Color HILIT_COLOR = Color.LIGHT_GRAY;
 	final static Color ERROR_COLOR = Color.PINK;
@@ -92,14 +94,18 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 		switch (gatewayResponse.getMessageType()) {
 		case GatewayResponse.GR_TYPE_STREAM_IN_USE:
 			System.out.println("GR_TYPE_STREAM_IN_USE");
+			message("Stream is alreay in use.");
 			break;
 
 		case GatewayResponse.GR_TYPE_STREAM_WAITING:
 			System.out.println("GR_TYPE_STREAM_WAITING");
+			message("Stream is waiting..");
 			break;
 
 		case GatewayResponse.GR_TYPE_STREAM_ESTABLISHED:
 			System.out.println("GR_TYPE_STREAM_ESTABLISHED");
+			message("Stream established");
+			ConnEstablished = true;
 			break;
 
 		case GatewayResponse.GR_TYPE_STREAM_CLOSING:
@@ -108,11 +114,28 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 
 		case GatewayResponse.GR_TYPE_CONSOLE_DATA:
 			System.out.println("GR_TYPE_CONSOLE_DATA");
+			// // textArea.setText((String) gatewayResponse.getMessagePayload().toString());
+			//
+			// short respLength = DataUtil.byteToShort(gatewayResponse.getMessageHeader(),
+			// 0);
+			//
+			// System.out.println("RespLen: " + respLength + " PayloadLen: " +
+			// gatewayResponse.getMessagePayload().length);
+			// for (int i = 0; i < gatewayResponse.getMessagePayload().length; i++) {
+			// System.out.print(gatewayResponse.getMessagePayload()[i] + " ");
+			// }
+			// System.out.print("\n");
+			// // System.out.print(gatewayResponse.getMessagePayload());
+			// // System.out.println(gatewayResponse.getMessagePayload().toString());
+
+			String ParsedString = new String(gatewayResponse.getMessagePayload(), Charset.forName("UTF-8"));
+			textArea.setText(ParsedString);
 
 			break;
 
 		default:
 			System.out.println("Response type: " + gatewayResponse.getMessageType());
+			message("Response type: " + gatewayResponse.getMessageType() + "UNKNOWN");
 			break;
 		}
 	}
@@ -161,8 +184,14 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 	class EnterAction extends AbstractAction {
 		public void actionPerformed(ActionEvent ev) {
 			String s = entry.getText();
-			message("Executing Command: < " + s + " >");
-			// textArea.setText(s);
+			if (ConnEstablished == true) {
+				message("Executing Command: < " + s + " >");
+				// textArea.setText(s);
+				mGatewayConsoleConnection.sendGatewayStreamRequest(
+						new GatewayMessage(GatewayMessage.GM_TYPE_CONSOLE_DATA, s.getBytes()));
+			} else {
+				message("Stream is not yet established");
+			}
 		}
 	}
 
@@ -249,7 +278,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 
 		String s = entry.getText();
 		if (s.length() <= 0) {
-			message("Nothing to search");
+			// message("Nothing to search");
 			return;
 		}
 
@@ -261,13 +290,13 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 				hilit.addHighlight(index, end, painter);
 				textArea.setCaretPosition(end);
 				entry.setBackground(entryBg);
-				message("'" + s + "' found. Press ESC to end search");
+				// message("'" + s + "' found. Press ESC to end search");
 			} catch (BadLocationException e) {
 				e.printStackTrace();
 			}
 		} else {
 			entry.setBackground(ERROR_COLOR);
-			message("'" + s + "' not found. Press ESC to start a new search");
+			// message("'" + s + "' not found. Press ESC to start a new search");
 		}
 	}
 
