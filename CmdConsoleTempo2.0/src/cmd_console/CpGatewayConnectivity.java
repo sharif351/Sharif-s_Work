@@ -12,8 +12,6 @@ public class CpGatewayConnectivity {
 	// hard coded key used for test clients.
 	private final static String TEST_AUTH_KEY = "f1c68c5a-e925-4e75-a932-5618e5a4f0ae";
 
-	private boolean isGateWayConnacted = false;
-
 	public CpGatewayConnectivity() {
 		System.out.println("CpGatewayConnectivity class started:");
 	}

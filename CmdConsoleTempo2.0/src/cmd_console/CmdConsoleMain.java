@@ -56,7 +56,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 	public CmdConsoleMain() {
 		initComponents();
 
-		InputStream in = getClass().getResourceAsStream("content.txt");
+		InputStream in = getClass().getResourceAsStream("CpCommandSet.txt");
 		try {
 			textArea.read(new InputStreamReader(in), null);
 		} catch (IOException e) {
@@ -114,7 +114,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 			break;
 
 		case GatewayResponse.GR_TYPE_CONSOLE_DATA:
-			System.out.println("GR_TYPE_CONSOLE_DATA");
+			// System.out.println("GR_TYPE_CONSOLE_DATA");
 			String ParsedString = new String(gatewayResponse.getMessagePayload(), Charset.forName("UTF-8"));
 			textArea.append(ParsedString + "\n\r");
 			break;
@@ -132,6 +132,9 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 
 	public void connectionClosing() {
 		System.out.println("Connection is closed by the Server");
+		mGatewayConsoleConnection = null;
+		ConnEstablished = false;
+		message("Connection is closed by the Server! Close and re-open the window to continue..");
 	}
 
 	// Close our stream connection if it's open. Synchronize this so other threads
@@ -172,7 +175,6 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 		public void actionPerformed(ActionEvent ev) {
 			String s = entry.getText();
 			if (ConnEstablished == true) {
-				message("Executing Command: < " + s + " >");
 				textArea.setText("Executed Command: <" + s + " >\n\n\r");
 				mGatewayConsoleConnection.sendGatewayStreamRequest(
 						new GatewayMessage(GatewayMessage.GM_TYPE_CONSOLE_DATA, s.getBytes()));
@@ -188,6 +190,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 		status = new JLabel();
 		jLabel1 = new JLabel();
 
+		/* For auto scrolling */
 		DefaultCaret caret = (DefaultCaret) textArea.getCaret();
 		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
@@ -300,7 +303,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 	}
 
 	public void removeUpdate(DocumentEvent ev) {
-		InputStream in = getClass().getResourceAsStream("content.txt");
+		InputStream in = getClass().getResourceAsStream("CpCommandSet.txt");
 		try {
 			textArea.read(new InputStreamReader(in), null);
 		} catch (IOException e) {
