@@ -42,7 +42,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 	private JLabel status;
 	private JTextArea textArea;
 
-	final static int TEMPO_ID = 10503;
+	final static int TEMPO_ID = 10561;
 
 	final static Color HILIT_COLOR = Color.LIGHT_GRAY;
 	final static Color ERROR_COLOR = Color.PINK;
@@ -56,7 +56,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 	public CmdConsoleMain() {
 		initComponents();
 
-		InputStream in = getClass().getResourceAsStream("CpCommandSet.txt");
+		InputStream in = getClass().getResourceAsStream("CpCommandSet");
 		try {
 			textArea.read(new InputStreamReader(in), null);
 		} catch (IOException e) {
@@ -132,7 +132,11 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 
 	public void connectionClosing() {
 		System.out.println("Connection is closed by the Server");
-		mGatewayConsoleConnection = null;
+		if (mGatewayConsoleConnection != null) {
+			mGatewayConsoleConnection.close();
+			mGatewayConsoleConnection = null;
+		}
+
 		ConnEstablished = false;
 		message("Connection is closed by the Server! Close and re-open the window to continue..");
 	}
@@ -151,9 +155,10 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 			} catch (Exception ex) {
 				System.out.println("Got exception on closing connection");
 			}
-
-			mGatewayConsoleConnection.close();
-			mGatewayConsoleConnection = null;
+			if (mGatewayConsoleConnection != null) {
+				mGatewayConsoleConnection.close();
+				mGatewayConsoleConnection = null;
+			}
 			ConnEstablished = false;
 		}
 	}
@@ -303,7 +308,7 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 	}
 
 	public void removeUpdate(DocumentEvent ev) {
-		InputStream in = getClass().getResourceAsStream("CpCommandSet.txt");
+		InputStream in = getClass().getResourceAsStream("CpCommandSet");
 		try {
 			textArea.read(new InputStreamReader(in), null);
 		} catch (IOException e) {

@@ -1,0 +1,28 @@
+/*
+* CarePredict Tempo-2.0 Command Console.
+*/
+
+/***********< Allowed Command Sets >************/
+
+reset_tempo
+chk_fw
+go_to_factory_app
+set_wifi_ssid_pass
+erase_rtc_slow_mem
+erase-nvs
+get_bat_stat
+wifi_single_scan		--Do wifi sacn and report it to the client
+wifi_single_scan_dlog		--Do wifi sacn and report it as dlog (if you have log streaming on you can see the result here too)
+wifi_scan_strm_ble		--keep doing wifi scan and stream the result through BLE (only available in BLE mode)
+wifi_scan_stop_strm		--Stop/pause wifi scan stream
+get_current_room
+start_raw_ir
+stop_raw_ir
+start_log_strm
+stop_log_strm
+send_stat			--send device stat to back-end
+strm_sens_data		--stream sensor data (humidity data for now)
+stop_strm_sens_data		--stop stream sensor data
+help
+
+/************************************/
