@@ -2,6 +2,7 @@ package cmd_console;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,6 +14,7 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.ParallelGroup;
 import javax.swing.GroupLayout.SequentialGroup;
 import javax.swing.InputMap;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -31,7 +33,7 @@ import javax.swing.text.DefaultCaret;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 
-public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleCallBackInterface {
+public class CmdConsoleMain extends JFrame implements DocumentListener, ActionListener, ConsoleCallBackInterface {
 
 	private GatewayConsoleConnection mGatewayConsoleConnection = null;
 	private boolean ConnEstablished = false;
@@ -41,8 +43,9 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 	private JScrollPane jScrollPane1;
 	private JLabel status;
 	private JTextArea textArea;
-
-	final static int TEMPO_ID = 10561;
+	private JButton MyButton;
+	private JTextField TempoIdField;
+	private JLabel jLabelTempoId;
 
 	final static Color HILIT_COLOR = Color.LIGHT_GRAY;
 	final static Color ERROR_COLOR = Color.PINK;
@@ -79,13 +82,12 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 		ActionMap MyKeyAction = entry.getActionMap();
 		MyInputKey.put(KeyStroke.getKeyStroke("ENTER"), ENTER_ACTION);
 		MyKeyAction.put(ENTER_ACTION, new EnterAction());
-
-		InitConsoleConn();
 	}
 
-	public void InitConsoleConn() {
+	public void InitConsoleConn(int TempoId) {
+
 		try {
-			mGatewayConsoleConnection = CpGatewayConnectivity.InitializeConnection(TEMPO_ID, this);
+			mGatewayConsoleConnection = CpGatewayConnectivity.InitializeConnection(TempoId, this);
 		} catch (Exception e) {
 			System.out.println("Exception thrown in the parent class");
 		}
@@ -194,6 +196,9 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 		textArea = new JTextArea();
 		status = new JLabel();
 		jLabel1 = new JLabel();
+		jLabelTempoId = new JLabel();
+		TempoIdField = new JTextField();
+		MyButton = new JButton();
 
 		/* For auto scrolling */
 		DefaultCaret caret = (DefaultCaret) textArea.getCaret();
@@ -210,6 +215,10 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 		jScrollPane1 = new JScrollPane(textArea);
 
 		jLabel1.setText("Enter command to execute:");
+		jLabelTempoId.setText("Tempo ID");
+
+		MyButton.setText("Start Console");
+		MyButton.addActionListener(this);
 
 		GroupLayout layout = new GroupLayout(getContentPane());
 		getContentPane().setLayout(layout);
@@ -233,6 +242,12 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 		h3.addComponent(jLabel1);
 		h3.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED);
 		h3.addComponent(entry, GroupLayout.DEFAULT_SIZE, 321, Short.MAX_VALUE);
+		h3.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED);
+		h3.addComponent(jLabelTempoId);
+		h3.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED);
+		h3.addComponent(TempoIdField, GroupLayout.DEFAULT_SIZE, 160, Short.MAX_VALUE);
+		h3.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED);
+		h3.addComponent(MyButton);
 
 		// Add the group h3 to the group h2
 		h2.addGroup(h3);
@@ -256,6 +271,10 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 		ParallelGroup v2 = layout.createParallelGroup(GroupLayout.Alignment.BASELINE);
 		v2.addComponent(jLabel1);
 		v2.addComponent(entry, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE);
+		v2.addComponent(jLabelTempoId);
+		v2.addComponent(TempoIdField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE);
+		v2.addComponent(MyButton);
+
 		// Add the group v2 tp the group v1
 		v1.addGroup(v2);
 		v1.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED);
@@ -269,6 +288,11 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ConsoleC
 		// Create the vertical group
 		layout.setVerticalGroup(vGroup);
 		pack();
+	}
+
+	public void actionPerformed(ActionEvent e) {
+		System.out.println("Start Console mode for Tempo: " + Integer.parseInt(TempoIdField.getText()));
+		InitConsoleConn(Integer.parseInt(TempoIdField.getText()));
 	}
 
 	public void search() {

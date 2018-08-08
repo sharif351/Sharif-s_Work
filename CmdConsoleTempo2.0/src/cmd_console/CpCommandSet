@@ -23,6 +23,7 @@ stop_log_strm
 send_stat			--send device stat to back-end
 strm_sens_data		--stream sensor data (humidity data for now)
 stop_strm_sens_data		--stop stream sensor data
+send_out_file
 help
 
 /************************************/
