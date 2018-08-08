@@ -3,10 +3,16 @@ package cmd_console;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Paths;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
@@ -93,6 +99,24 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ActionLi
 		}
 	}
 
+	final String FileRcvStarts = "File response: Sent starts!";
+	final String FileRcvDone = "File response: Sent done!";
+	final String FileName = "RawSens.bin";
+
+	private void Write2File(byte data[]) {
+		try (OutputStream outputStream = new FileOutputStream(FileName, true)) {
+
+			outputStream.write(data);
+			textArea.append(".");
+
+		} catch (IOException ex) {
+			System.out.println("File Write error!");
+			ex.printStackTrace();
+		}
+	}
+
+	private boolean file_strm_started = false;
+
 	public void gatewayResponseAvailable(GatewayResponse gatewayResponse) {
 		switch (gatewayResponse.getMessageType()) {
 		case GatewayResponse.GR_TYPE_STREAM_IN_USE:
@@ -116,14 +140,42 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ActionLi
 			break;
 
 		case GatewayResponse.GR_TYPE_CONSOLE_DATA:
-			// System.out.println("GR_TYPE_CONSOLE_DATA");
+
 			String ParsedString = new String(gatewayResponse.getMessagePayload(), Charset.forName("UTF-8"));
-			textArea.append(ParsedString + "\n\r");
+
+			if (file_strm_started == true) {
+				if (ParsedString.equals(FileRcvDone) == true) {
+					textArea.append("\n\r" + FileRcvDone + "\n\r");
+					file_strm_started = false;
+				} else {
+					Write2File(gatewayResponse.getMessagePayload());
+				}
+			} else {
+
+				if (ParsedString.equals(FileRcvStarts) == true) {
+
+					try {
+						Files.deleteIfExists(Paths.get(FileName));
+					} catch (NoSuchFileException e) {
+						System.out.println("No such file/directory exists");
+					} catch (DirectoryNotEmptyException e) {
+						System.out.println("Directory is not empty.");
+					} catch (IOException e) {
+						System.out.println("Invalid permissions.");
+					}
+
+					textArea.append(FileRcvStarts + "\n\r");
+					file_strm_started = true;
+				} else {
+					textArea.append(ParsedString + "\n\r");
+				}
+			}
+
 			break;
 
 		default:
 			System.out.println("Response type: " + gatewayResponse.getMessageType());
-			message("Response type: " + gatewayResponse.getMessageType() + "UNKNOWN");
+			message("Response type: " + gatewayResponse.getMessageType() + " (UNKNOWN)");
 			break;
 		}
 	}
@@ -291,8 +343,13 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ActionLi
 	}
 
 	public void actionPerformed(ActionEvent e) {
-		System.out.println("Start Console mode for Tempo: " + Integer.parseInt(TempoIdField.getText()));
-		InitConsoleConn(Integer.parseInt(TempoIdField.getText()));
+		if (mGatewayConsoleConnection == null) {
+			System.out.println("Start Console mode for Tempo: " + Integer.parseInt(TempoIdField.getText()));
+			InitConsoleConn(Integer.parseInt(TempoIdField.getText()));
+		} else {
+			System.out.println("Gateway is already connected!");
+		}
+
 	}
 
 	public void search() {

@@ -126,7 +126,6 @@ public class GatewayConsoleConnection extends Thread {
 			// allow thread to exit.
 			// If this is the first error reported, we may enter a re-connect loop before
 			// this thread exits.
-
 			m_shutdown = true;
 
 			m_consoleCallback.networkException("Network Exception", ex);
@@ -145,7 +144,6 @@ public class GatewayConsoleConnection extends Thread {
 
 		while (bodyReadCount < buffer.length) {
 			int remainingCount = buffer.length - bodyReadCount;
-
 			// Read the rest of the message.
 			int thisReadAmount = m_socketIn.read(buffer, bodyReadCount, remainingCount);
 
