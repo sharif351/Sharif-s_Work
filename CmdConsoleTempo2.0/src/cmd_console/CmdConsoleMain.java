@@ -327,10 +327,10 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ActionLi
 		v2.addComponent(TempoIdField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE);
 		v2.addComponent(MyButton);
 
-		// Add the group v2 tp the group v1
+		// Add the group v2 to the group v1
 		v1.addGroup(v2);
 		v1.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED);
-		v1.addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 233, Short.MAX_VALUE);
+		v1.addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 633, Short.MAX_VALUE);
 		v1.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED);
 		v1.addComponent(status);
 		v1.addContainerGap();
