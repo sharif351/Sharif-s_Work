@@ -41,6 +41,11 @@ import javax.swing.text.Highlighter;
 
 public class CmdConsoleMain extends JFrame implements DocumentListener, ActionListener, ConsoleCallBackInterface {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	private GatewayConsoleConnection mGatewayConsoleConnection = null;
 	private boolean ConnEstablished = false;
 
@@ -222,6 +227,11 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ActionLi
 	 */
 
 	class CancelAction extends AbstractAction {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 2L;
+
 		public void actionPerformed(ActionEvent ev) {
 			hilit.removeAllHighlights();
 			entry.setText("");
@@ -231,6 +241,11 @@ public class CmdConsoleMain extends JFrame implements DocumentListener, ActionLi
 	}
 
 	class EnterAction extends AbstractAction {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 3L;
+
 		public void actionPerformed(ActionEvent ev) {
 			String s = entry.getText();
 			if (ConnEstablished == true) {
